@@ -137,6 +137,4 @@ Bu Compose tanımı TLS/reverse proxy, üretim sır yönetimi, yedekleme veya in
 2. `.gitignore` derleme çıktıları, yerel loglar, `.env` ve Flutter build çıktılarını dışarıda bırakır. İlk push'tan önce `git status` ve `git diff --cached` ile paylaşılacak dosyaları kontrol edin.
 3. GitHub veya GitLab'da boş bir **public** repository oluşturup talimatlarındaki uzak adresi `origin` olarak ekleyin, `main` dalını push edin. Bu yerel klasörde henüz Git deposu/uzak repo bulunmadığından bu adım hesapta repository oluşturma erişimi gerektirir.
 
-## Lisans
 
-Bu proje [MIT Lisansı](LICENSE) ile yayımlanır.
