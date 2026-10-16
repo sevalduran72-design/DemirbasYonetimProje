@@ -1999,10 +1999,15 @@ function sayfalamaKontroluOlustur(toplamSayfa, toplamKayit) {
 
 function araVeFiltrele() {
     const aramaKutusu = $("aramaKutusu");
-    const aranan = aramaKutusu ? aramaKutusu.value.trim().toLocaleLowerCase("tr-TR") : "";
+    const normalizeAramaMetni = deger => String(deger ?? "")
+        .toLocaleLowerCase("tr-TR")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ı/g, "i");
+    const aranan = normalizeAramaMetni(aramaKutusu ? aramaKutusu.value.trim() : "");
     const filtreli = tumDemirbaslar.filter(d =>
-        [d.demirbasId, d.demirbasAdi, d.kategori, d.marka, d.model, d.durum]
-            .join(" ").toLocaleLowerCase("tr-TR").includes(aranan)
+        normalizeAramaMetni([d.demirbasId, d.demirbasAdi, d.kategori, d.marka, d.model, d.durum].join(" "))
+            .includes(aranan)
     );
 
     sayfalamaState.aktifSayfa = 1;

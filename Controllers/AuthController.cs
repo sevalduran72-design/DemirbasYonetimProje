@@ -803,12 +803,18 @@ public class AuthController : ControllerBase
         await using var connection = await BaglantiAcAsync(cancellationToken);
         await KullaniciTablosunuHazirlaAsync(connection, cancellationToken);
 
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
         const string secSql = @"
             SELECT KullaniciAdi, Rol
-            FROM dbo.UygulamaKullanicilari
+            FROM dbo.UygulamaKullanicilari WITH (UPDLOCK, HOLDLOCK)
             WHERE KullaniciId = @KullaniciId;";
 
-        await using (var secCommand = new SqlCommand(secSql, connection))
+        string kullaniciAdi;
+        string rol;
+        await using (var secCommand = new SqlCommand(secSql, connection, transaction))
         {
             secCommand.Parameters.AddWithValue("@KullaniciId", kullaniciId);
             await using var secReader = await secCommand.ExecuteReaderAsync(cancellationToken);
@@ -817,30 +823,54 @@ public class AuthController : ControllerBase
                 return NotFound(new { mesaj = "Kullanıcı bulunamadı." });
             }
 
-            var kullaniciAdi = secReader.GetString(0);
-            var rol = secReader.GetString(1);
+            kullaniciAdi = secReader.GetString(0);
+            rol = secReader.GetString(1);
+        }
 
-            if (string.Equals(rol, "Admin", StringComparison.OrdinalIgnoreCase))
-            {
-                const string adminSayisiSql = @"SELECT COUNT(*) FROM dbo.UygulamaKullanicilari WHERE Rol = N'Admin';";
-                await using var adminSayisiCommand = new SqlCommand(adminSayisiSql, connection);
-                var adminSayisi = Convert.ToInt32(await adminSayisiCommand.ExecuteScalarAsync());
-                if (adminSayisi <= 1)
-                {
-                    return BadRequest(new { mesaj = "Son yönetici silinemez." });
-                }
-            }
+        if (string.Equals(User.Identity?.Name, kullaniciAdi, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { mesaj = "Kendi hesabınızı silemezsiniz." });
+        }
 
-            if (string.Equals(User.Identity?.Name, kullaniciAdi, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(rol, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            const string adminSayisiSql = @"
+                SELECT COUNT(*)
+                FROM dbo.UygulamaKullanicilari WITH (UPDLOCK, HOLDLOCK)
+                WHERE Rol = N'Admin';";
+            await using var adminSayisiCommand =
+                new SqlCommand(adminSayisiSql, connection, transaction);
+            var adminSayisi = Convert.ToInt32(
+                await adminSayisiCommand.ExecuteScalarAsync(cancellationToken));
+            if (adminSayisi <= 1)
             {
-                return BadRequest(new { mesaj = "Kendi hesabınızı silemezsiniz." });
+                return BadRequest(new { mesaj = "Son yönetici silinemez." });
             }
         }
 
-        const string deleteSql = @"DELETE FROM dbo.UygulamaKullanicilari WHERE KullaniciId = @KullaniciId;";
-        await using var deleteCommand = new SqlCommand(deleteSql, connection);
-        deleteCommand.Parameters.AddWithValue("@KullaniciId", kullaniciId);
-        await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
+        const string deleteRequestsSql = @"
+            DELETE FROM dbo.SifreSifirlamaIstekleri
+            WHERE KullaniciId = @KullaniciId;";
+        await using (var deleteRequestsCommand =
+                     new SqlCommand(deleteRequestsSql, connection, transaction))
+        {
+            deleteRequestsCommand.Parameters.AddWithValue("@KullaniciId", kullaniciId);
+            await deleteRequestsCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        const string deleteSql = @"
+            DELETE FROM dbo.UygulamaKullanicilari
+            WHERE KullaniciId = @KullaniciId;";
+        await using (var deleteCommand = new SqlCommand(deleteSql, connection, transaction))
+        {
+            deleteCommand.Parameters.AddWithValue("@KullaniciId", kullaniciId);
+            if (await deleteCommand.ExecuteNonQueryAsync(cancellationToken) != 1)
+            {
+                return NotFound(new { mesaj = "Kullanıcı bulunamadı." });
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken);
 
         return Ok(new { mesaj = "Kullanıcı silindi." });
     }
