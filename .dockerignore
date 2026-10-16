@@ -1,0 +1,17 @@
+.git
+.vs
+.idea
+.vscode
+bin
+obj
+TestResults
+mobil
+docs
+.env
+.env.*
+!.env.example
+appsettings.*.Local.json
+*.user
+*.suo
+*.log
+SQLQuery*.sql

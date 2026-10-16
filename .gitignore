@@ -1,0 +1,46 @@
+# .NET
+bin/
+obj/
+.vs/
+TestResults/
+*.user
+*.suo
+*.log
+/app_run.log
+/SQLQuery*.sql
+/cookie.txt
+/cookies.txt
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Flutter / Dart
+mobil/.dart_tool/
+mobil/build/
+mobil/.flutter-plugins
+mobil/.flutter-plugins-dependencies
+mobil/android/.gradle/
+mobil/android/local.properties
+mobil/ios/Pods/
+mobil/ios/.symlinks/
+mobil/ios/Flutter/ephemeral/
+mobil/macos/Pods/
+mobil/macos/Flutter/ephemeral/
+mobil/linux/flutter/ephemeral/
+mobil/windows/flutter/ephemeral/
+mobil/coverage/
+*.apk
+*.aab
+*.jks
+*.keystore
+key.properties
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

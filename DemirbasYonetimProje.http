@@ -1,0 +1,52 @@
+@DemirbasYonetimProje_HostAddress = http://localhost:5181
+@yoneticiKullaniciAdi = yonetici-kullanici-adiniz
+@yoneticiParola = yonetici-parolaniz
+@kullaniciAdi = kullanici-adiniz
+@kullaniciParola = kullanici-parolaniz
+@demirbasId = 1
+@qrKodu = DMB-20261014-000001
+@personelId = 1
+@kullaniciId = 1
+
+### Yönetici girişi
+POST {{DemirbasYonetimProje_HostAddress}}/api/auth/yonetici-giris
+Content-Type: application/json
+
+{
+  "kullaniciAdi": "{{yoneticiKullaniciAdi}}",
+  "parola": "{{yoneticiParola}}"
+}
+
+### Normal kullanıcı girişi
+POST {{DemirbasYonetimProje_HostAddress}}/api/auth/giris
+Content-Type: application/json
+
+{
+  "kullaniciAdi": "{{kullaniciAdi}}",
+  "parola": "{{kullaniciParola}}"
+}
+
+### QR/barkod ile demirbaş detayını getir
+GET {{DemirbasYonetimProje_HostAddress}}/api/Demirbas/qr/{{qrKodu}}
+
+### Oturum açmış kullanıcının aktif zimmetleri
+GET {{DemirbasYonetimProje_HostAddress}}/api/Demirbas/benim-zimmetlerim
+
+### Sahadan arıza bildir
+POST {{DemirbasYonetimProje_HostAddress}}/api/Demirbas/{{demirbasId}}/ariza-bildir
+Content-Type: application/json
+X-Requested-With: XMLHttpRequest
+
+{
+  "aciklama": "Cihaz açılış sırasında hata veriyor."
+}
+
+### Kullanıcıyı personel kaydına bağla (yönetici)
+PUT {{DemirbasYonetimProje_HostAddress}}/api/auth/kullanicilar/{{kullaniciId}}
+Content-Type: application/json
+X-Requested-With: XMLHttpRequest
+
+{
+  "personelId": {{personelId}},
+  "personelIdGuncellensin": true
+}
